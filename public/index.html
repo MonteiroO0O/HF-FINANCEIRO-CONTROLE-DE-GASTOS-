@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hernandes Financeiro | Enterprise Control System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #060913; color: #f3f4f6; overflow-x: hidden; }
+    
+    /* Background High-Tech Grid & Glow */
+    .tech-bg {
+      background-image: radial-gradient(circle at 50% 10%, rgba(37, 99, 235, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 90% 90%, rgba(147, 51, 234, 0.08) 0%, transparent 40%),
+                        linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+    }
+
+    .glass-card { 
+      background: rgba(13, 19, 33, 0.75); 
+      backdrop-filter: blur(20px); 
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(59, 130, 246, 0.15); 
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05); 
+    }
+    
+    .glass-input { 
+      background: rgba(8, 12, 22, 0.9); 
+      border: 1px solid rgba(255, 255, 255, 0.08); 
+      color: #fff; 
+      transition: all 0.3s ease;
+    }
+    .glass-input:focus { 
+      border-color: #3b82f6; 
+      outline: none; 
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); 
+    }
+
+    .btn-glow {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
+      transition: all 0.3s ease;
+    }
+    .btn-glow:hover {
+      box-shadow: 0 6px 25px rgba(37, 99, 235, 0.6);
+      transform: translateY(-1px);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #060913; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between tech-bg">
+
+  <!-- Toast Notifications Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Auth Screen -->
+  <div id="authScreen" class="fixed inset-0 flex items-center justify-center z-50 bg-[#060913]/95 backdrop-blur-xl px-4">
+    <div class="glass-card p-8 rounded-3xl w-full max-w-md relative overflow-hidden">
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div class="text-center mb-8 flex flex-col items-center">
+        <img src="img/logo.png" alt="Hernandes Financeiro" class="w-16 h-16 rounded-2xl p-2 bg-slate-900/90 border border-blue-500/30 shadow-xl shadow-blue-500/20 mb-3 object-contain">
+        <h2 class="text-2xl font-extrabold tracking-tight text-white">HERNANDES <span class="text-blue-500">FINANCEIRO</span></h2>
+        <p class="text-[11px] text-gray-400 mt-1 uppercase tracking-widest font-medium">Sistema de Controle de Gastos</p>
+      </div>
+
+      <div class="flex bg-slate-900/80 p-1.5 rounded-2xl mb-6 border border-slate-800">
+        <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-md transition">Entrar</button>
+        <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2.5 text-xs font-bold rounded-xl text-gray-400 hover:text-white transition">Criar Conta</button>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+        <div id="nameGroup" class="hidden">
+          <label class="block text-xs font-semibold text-gray-400 mb-1">NOME COMPLETO</label>
+          <input type="text" id="authName" class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="Wesley Monteiro">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1">E-MAIL</label>
+          <input type="email" id="authEmail" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="ceo@embellezerday.com">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1">SENHA</label>
+          <input type="password" id="authPassword" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="••••••••">
+        </div>
+
+        <button type="submit" id="authBtn" class="w-full py-3.5 rounded-xl btn-glow font-bold text-white transition mt-2 text-sm tracking-wide">Acessar Plataforma</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dashboard App -->
+  <div id="appScreen" class="hidden flex-1 flex flex-col">
+    <!-- Navbar -->
+    <header class="border-b border-blue-500/10 bg-[#0b1326]/80 backdrop-blur-md sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="img/logo.png" alt="Logo" class="w-10 h-10 rounded-xl p-1 bg-slate-900 border border-blue-500/30 shadow-lg shadow-blue-500/20 object-contain">
+          <div>
+            <h1 class="text-sm font-extrabold tracking-tight text-white">HERNANDES <span class="text-blue-500">FINANCEIRO</span></h1>
+            <p class="text-[9px] text-emerald-400 font-bold uppercase tracking-widest">● Sistema Operacional Ativo</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="hidden sm:flex flex-col text-right">
+            <span id="userNameDisplay" class="text-xs font-bold text-gray-200"></span>
+            <span class="text-[10px] text-gray-400 font-medium">Gestão Financeira Avançada</span>
+          </div>
+          <button onclick="logout()" class="px-3.5 py-2 rounded-xl bg-slate-900/80 border border-rose-500/30 text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-power-off"></i> Sair
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full space-y-8">
+      <!-- Cards Summary -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-card p-6 rounded-3xl border-l-4 border-emerald-500 relative overflow-hidden">
+          <div class="absolute right-4 top-4 text-emerald-500/10 text-4xl"><i class="fa-solid fa-arrow-trend-up"></i></div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Entradas Totais</p>
+          <h3 id="totalIncome" class="text-3xl font-black text-emerald-400 mt-2">R$ 0,00</h3>
+        </div>
+        <div class="glass-card p-6 rounded-3xl border-l-4 border-rose-500 relative overflow-hidden">
+          <div class="absolute right-4 top-4 text-rose-500/10 text-4xl"><i class="fa-solid fa-arrow-trend-down"></i></div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Saídas Totais</p>
+          <h3 id="totalExpense" class="text-3xl font-black text-rose-400 mt-2">R$ 0,00</h3>
+        </div>
+        <div class="glass-card p-6 rounded-3xl border-l-4 border-blue-500 relative overflow-hidden">
+          <div class="absolute right-4 top-4 text-blue-500/10 text-4xl"><i class="fa-solid fa-wallet"></i></div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Saldo Líquido</p>
+          <h3 id="totalBalance" class="text-3xl font-black text-white mt-2">R$ 0,00</h3>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center">
+          <h4 class="text-xs font-bold text-gray-300 uppercase tracking-widest mb-4 self-start flex items-center gap-2"><i class="fa-solid fa-chart-pie text-blue-500"></i> Despesas por Categoria</h4>
+          <div class="w-full h-64 flex justify-center items-center">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+        <div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center">
+          <h4 class="text-xs font-bold text-gray-300 uppercase tracking-widest mb-4 self-start flex items-center gap-2"><i class="fa-solid fa-chart-bar text-blue-500"></i> Fluxo Entradas vs Saídas</h4>
+          <div class="w-full h-64 flex justify-center items-center">
+            <canvas id="flowChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls, Form & Table -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- New Transaction Form -->
+        <div class="glass-card p-6 rounded-3xl">
+          <h4 class="text-base font-bold text-white mb-5 flex items-center gap-2.5"><i class="fa-solid fa-circle-plus text-blue-500"></i> Nova Transação</h4>
+          <form id="txForm" onsubmit="createTransaction(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 mb-1">DESCRIÇÃO</label>
+              <input type="text" id="txDesc" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="Ex: Servidores AWS">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 mb-1">VALOR (R$)</label>
+              <input type="number" step="0.01" id="txAmount" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="350.00">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">TIPO</label>
+                <select id="txType" class="w-full px-4 py-3 rounded-xl glass-input text-sm">
+                  <option value="income">Entrada</option>
+                  <option value="expense">Saída</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">CATEGORIA</label>
+                <select id="txCategory" class="w-full px-4 py-3 rounded-xl glass-input text-sm">
+                  <option value="Desenvolvimento">Desenvolvimento</option>
+                  <option value="Servidores">Servidores</option>
+                  <option value="Alimentação">Alimentação</option>
+                  <option value="Transporte">Transporte</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 mb-1">DATA</label>
+              <input type="date" id="txDate" required class="w-full px-4 py-3 rounded-xl glass-input text-sm">
+            </div>
+            <button type="submit" class="w-full py-3.5 rounded-xl btn-glow font-bold text-white transition text-sm tracking-wide shadow-lg">Adicionar Registro</button>
+          </form>
+        </div>
+
+        <!-- Transactions List & Filters -->
+        <div class="lg:col-span-2 glass-card p-6 rounded-3xl flex flex-col">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h4 class="text-base font-bold text-white flex items-center gap-2.5"><i class="fa-solid fa-list-check text-blue-500"></i> Histórico Financeiro</h4>
+            <div class="flex items-center gap-2.5 w-full sm:w-auto">
+              <input type="text" id="searchInput" oninput="filterTransactions()" placeholder="Pesquisar transação..." class="px-4 py-2 rounded-xl glass-input text-xs w-full sm:w-52">
+              <button onclick="exportData('json')" class="px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-gray-300 hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-file-code text-blue-400"></i> JSON</button>
+              <button onclick="exportData('csv')" class="px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-gray-300 hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-file-csv text-emerald-400"></i> CSV</button>
+            </div>
+          </div>
+          <div class="overflow-x-auto flex-1 max-h-[400px]">
+            <table class="w-full text-left text-sm text-gray-300">
+              <thead class="text-[10px] uppercase bg-slate-900/80 text-gray-400 border-b border-slate-800 sticky top-0 tracking-widest font-extrabold">
+                <tr>
+                  <th class="p-3.5">Descrição</th>
+                  <th class="p-3.5">Categoria</th>
+                  <th class="p-3.5">Data</th>
+                  <th class="p-3.5">Valor</th>
+                  <th class="p-3.5 text-center">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="txTableBody" class="divide-y divide-slate-800/50">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentTab = 'login';
+    let token = localStorage.getItem('hf_token');
+    let user = JSON.parse(localStorage.getItem('hf_user'));
+    let allTransactions = [];
+    let catChart = null;
+    let flowChart = null;
+
+    document.getElementById('txDate').valueAsDate = new Date();
+
+    if (token && user) {
+      showDashboard();
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `px-4 py-3 rounded-2xl text-xs font-bold text-white shadow-2xl transition transform translate-y-2 opacity-0 flex items-center gap-2.5 border pointer-events-auto ${
+        type === 'success' ? 'bg-slate-900/95 border-emerald-500/40 text-emerald-400' : 'bg-slate-900/95 border-rose-500/40 text-rose-400'
+      }`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-triangle-exclamation text-rose-400'}"></i> ${message}`;
+      container.appendChild(toast);
+      
+      setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const nameGroup = document.getElementById('nameGroup');
+      const authBtn = document.getElementById('authBtn');
+      const tabLogin = document.getElementById('tabLogin');
+      const tabRegister = document.getElementById('tabRegister');
+
+      if (tab === 'register') {
+        nameGroup.classList.remove('hidden');
+        authBtn.innerText = 'Criar Conta Enterprise';
+        tabRegister.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-md transition';
+        tabLogin.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl text-gray-400 hover:text-white transition';
+      } else {
+        nameGroup.classList.add('hidden');
+        authBtn.innerText = 'Acessar Plataforma';
+        tabLogin.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-md transition';
+        tabRegister.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl text-gray-400 hover:text-white transition';
+      }
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const name = document.getElementById('authName').value;
+
+      const endpoint = currentTab === 'register' ? '/api/auth/register' : '/api/auth/login';
+      const payload = currentTab === 'register' ? { name, email, password } : { email, password };
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return showToast(data.error || 'Erro na autenticação', 'error');
+
+        token = data.token;
+        user = data.user;
+        localStorage.setItem('hf_token', token);
+        localStorage.setItem('hf_user', JSON.stringify(user));
+
+        showToast('Autenticado com sucesso!');
+        showDashboard();
+      } catch (err) {
+        showToast('Erro ao conectar ao servidor backend.', 'error');
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.remove('hidden');
+      document.getElementById('userNameDisplay').innerText = user.name;
+      loadTransactions();
+    }
+
+    function logout() {
+      localStorage.clear();
+      location.reload();
+    }
+
+    async function loadTransactions() {
+      try {
+        const res = await fetch('/api/transactions', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.status === 401) return logout();
+        allTransactions = await res.json();
+        renderTableAndCards(allTransactions);
+        updateCharts(allTransactions);
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      }
+    }
+
+    function renderTableAndCards(transactions) {
+      const tbody = document.getElementById('txTableBody');
+      tbody.innerHTML = '';
+
+      let income = 0;
+      let expense = 0;
+
+      transactions.forEach(tx => {
+        if (tx.type === 'income') income += tx.amount;
+        else expense += tx.amount;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition';
+        tr.innerHTML = `
+          <td class="p-3.5 font-semibold text-white">${tx.description}</td>
+          <td class="p-3.5"><span class="px-2.5 py-1 rounded-lg bg-slate-800 text-[11px] font-bold text-blue-400 border border-slate-700">${tx.category}</span></td>
+          <td class="p-3.5 text-gray-400 text-xs">${tx.date}</td>
+          <td class="p-3.5 font-extrabold ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">
+            ${tx.type === 'income' ? '+' : '-'} R$ ${tx.amount.toFixed(2)}
+          </td>
+          <td class="p-3.5 text-center">
+            <button onclick="deleteTx(${tx.id})" class="text-gray-500 hover:text-rose-400 transition p-1.5"><i class="fa-solid fa-trash-can"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('totalIncome').innerText = `R$ ${income.toFixed(2)}`;
+      document.getElementById('totalExpense').innerText = `R$ ${expense.toFixed(2)}`;
+      document.getElementById('totalBalance').innerText = `R$ ${(income - expense).toFixed(2)}`;
+    }
+
+    function filterTransactions() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allTransactions.filter(tx => 
+        tx.description.toLowerCase().includes(term) || tx.category.toLowerCase().includes(term)
+      );
+      renderTableAndCards(filtered);
+    }
+
+    async function createTransaction(e) {
+      e.preventDefault();
+      const description = document.getElementById('txDesc').value;
+      const amount = parseFloat(document.getElementById('txAmount').value);
+      const type = document.getElementById('txType').value;
+      const category = document.getElementById('txCategory').value;
+      const date = document.getElementById('txDate').value;
+
+      try {
+        const res = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ description, amount, type, category, date })
+        });
+        if (res.ok) {
+          document.getElementById('txDesc').value = '';
+          document.getElementById('txAmount').value = '';
+          showToast('Transação registrada com sucesso!');
+          loadTransactions();
+        }
+      } catch (err) {
+        showToast('Erro ao cadastrar transação.', 'error');
+      }
+    }
+
+    async function deleteTx(id) {
+      if (!confirm('Deseja excluir este registro?')) return;
+      try {
+        const res = await fetch(`/api/transactions/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          showToast('Transação removida com sucesso!');
+          loadTransactions();
+        }
+      } catch (err) {
+        showToast('Erro ao excluir transação.', 'error');
+      }
+    }
+
+    function exportData(format) {
+      if (format === 'json') {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allTransactions, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "hernandes_financeiro_backup.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      } else if (format === 'csv') {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Descricao,Tipo,Categoria,Valor,Data\r\n";
+        allTransactions.forEach(tx => {
+          csvContent += `${tx.id},"${tx.description}",${tx.type},${tx.category},${tx.amount},${tx.date}\r\n`;
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "hernandes_financeiro_relatorio.csv");
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+      showToast('Relatório exportado com sucesso!');
+    }
+
+    function updateCharts(transactions) {
+      const categories = {};
+      let totalInc = 0;
+      let totalExp = 0;
+
+      transactions.forEach(tx => {
+        if (tx.type === 'expense') {
+          categories[tx.category] = (categories[tx.category] || 0) + tx.amount;
+          totalExp += tx.amount;
+        } else {
+          totalInc += tx.amount;
+        }
+      });
+
+      const catCtx = document.getElementById('categoryChart').getContext('2d');
+      if (catChart) catChart.destroy();
+      catChart = new Chart(catCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(categories),
+          datasets: [{
+            data: Object.values(categories),
+            backgroundColor: ['#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#10b981'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 11, weight: '600' } } } }
+        }
+      });
+
+      const flowCtx = document.getElementById('flowChart').getContext('2d');
+      if (flowChart) flowChart.destroy();
+      flowChart = new Chart(flowCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Entradas', 'Saídas'],
+          datasets: [{
+            data: [totalInc, totalExp],
+            backgroundColor: ['#10b981', '#f43f5e'],
+            borderRadius: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#9ca3af', font: { weight: '600' } }, grid: { display: false } },
+            y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.03)' } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
